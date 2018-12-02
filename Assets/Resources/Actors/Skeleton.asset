@@ -1,0 +1,22 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInternal: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 662f8b68d04cc3c41afb10141c2cb1f5, type: 3}
+  m_Name: Skeleton
+  m_EditorClassIdentifier: 
+  sprite: {fileID: 21300068, guid: e67c96f2be20ac94c8b0556b9f6ed0bc, type: 3}
+  deadSprite: {fileID: 21300012, guid: e395c8a6e6a87d4499e477fd645d3ddb, type: 3}
+  faceSprite: {fileID: 21300020, guid: e67c96f2be20ac94c8b0556b9f6ed0bc, type: 3}
+  health: 20
+  attack: 15
+  moveRange: 3
+  attackRange: 1
+  turnSpeed: 13
+  size: 1
