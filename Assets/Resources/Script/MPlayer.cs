@@ -23,6 +23,7 @@ public class MPlayer : Actor {
 		}
 		else {
 			Client.Instance.Send("CRC|" + Idx);
+			instant = true;
 			Position = new Vector3Int(-1000, -1000, 0);
 		}
 	}
@@ -33,7 +34,13 @@ public class MPlayer : Actor {
 
 	public void TryMove(Vector3Int tar) {
 		GetMovablePosition(MoveRadius, false);
-		if (playerMove.SingleOrDefault(x => x.Item1 == tar) != null) {
+
+		ActorMoveList = playerMove.SingleOrDefault(x => x.Item1 == tar).Item2;
+		if (ActorMoveList == null) {
+			ActorMoveList = new List<Utility.Direction>();
+		}
+
+		if (ActorMoveList.Count > 0) {
 			Position = tar;
 			State = TurnState.ATK;
 		}
@@ -45,6 +52,7 @@ public class MPlayer : Actor {
 		GetMovablePosition(AttackRadius, true);
 		if (playerMove.SingleOrDefault(x => x.Item1 == target.Position) != null) {
 			target.Health -= Attack;
+			ActorAnim.FaceAttackTarget(target.Position);
 			Main.main.waiting = null;
 			State = TurnState.INACTIVE;
 		}

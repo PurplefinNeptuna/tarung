@@ -11,9 +11,20 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 662f8b68d04cc3c41afb10141c2cb1f5, type: 3}
   m_Name: Knight
   m_EditorClassIdentifier: 
-  sprite: {fileID: 21300056, guid: e67c96f2be20ac94c8b0556b9f6ed0bc, type: 3}
   deadSprite: {fileID: 21300002, guid: e395c8a6e6a87d4499e477fd645d3ddb, type: 3}
   faceSprite: {fileID: 21300008, guid: e67c96f2be20ac94c8b0556b9f6ed0bc, type: 3}
+  upSprite:
+  - {fileID: 21300082, guid: e67c96f2be20ac94c8b0556b9f6ed0bc, type: 3}
+  - {fileID: 21300080, guid: e67c96f2be20ac94c8b0556b9f6ed0bc, type: 3}
+  - {fileID: 21300078, guid: e67c96f2be20ac94c8b0556b9f6ed0bc, type: 3}
+  downSprite:
+  - {fileID: 21300010, guid: e67c96f2be20ac94c8b0556b9f6ed0bc, type: 3}
+  - {fileID: 21300008, guid: e67c96f2be20ac94c8b0556b9f6ed0bc, type: 3}
+  - {fileID: 21300006, guid: e67c96f2be20ac94c8b0556b9f6ed0bc, type: 3}
+  lrSprite:
+  - {fileID: 21300058, guid: e67c96f2be20ac94c8b0556b9f6ed0bc, type: 3}
+  - {fileID: 21300056, guid: e67c96f2be20ac94c8b0556b9f6ed0bc, type: 3}
+  - {fileID: 21300054, guid: e67c96f2be20ac94c8b0556b9f6ed0bc, type: 3}
   health: 50
   attack: 20
   moveRange: 2

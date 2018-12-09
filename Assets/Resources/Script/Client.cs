@@ -22,6 +22,8 @@ CHR = client (host) set run
 SHR = broadcast of CHR
 CRC = client (host) removing corpse
 SRC = broadcast of CRC
+CAB = Client abort game
+SAB = broadcast CAB
 */
 
 
@@ -149,6 +151,9 @@ public class Client : MonoBehaviour {
 					Main.main.TryRemoveCorpse(idx);
 					break;
 				}
+			case "SAB":
+				Main.main.LoadMenu();
+				break;
 		}
 	}
 

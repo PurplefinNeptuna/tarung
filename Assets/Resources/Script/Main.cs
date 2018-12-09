@@ -11,12 +11,13 @@ public class Main : MonoBehaviour {
 
 	public static Main main;
 	public Grid grid;
+	public GameObject debugGrid;
 	public Tilemap ground;
 	public List<Actor> actors;
 	private Vector3Int cellpos;
 	private Vector3 worldpos;
 	private Vector3 firstpos;
-	private bool clicked = false;
+	public bool clicked = false;
 	public Dictionary<Vector3Int, WorldTiles> tiles;
 	public delegate void Updater();
 	public event Updater ActorUpdate;
@@ -25,6 +26,8 @@ public class Main : MonoBehaviour {
 	public MPlayer waiting;
 	public string[] teamName;
 	private ScenarioData mapData;
+	public bool isDebug = false;
+	public bool menuFocus = false;
 
 	private Tuple<Actor, int> thisTurn;
 	public TurnQueue turnQueue;
@@ -46,6 +49,8 @@ public class Main : MonoBehaviour {
 	public Text profileAtk;
 	public Text profileSpd;
 	public Text profileMov;
+	public GameObject MenuPanel;
+	public GameObject UICanvas;
 
 	private void Awake() {
 		if (main == null) {
@@ -55,35 +60,45 @@ public class Main : MonoBehaviour {
 			Destroy(gameObject);
 		}
 
-		mapData = GameObject.FindGameObjectWithTag("Data").GetComponent<ScenarioData>();
-		mapData.map = Instantiate<GameObject>(mapData.map);
-		isMulti = mapData.isMulti;
-		team = mapData.myTeam;
-		grid = mapData.map.GetComponent<Grid>();
-
 		actors = new List<Actor>();
 
-		GetWorldTiles();
+		if (!isDebug) {
+			Destroy(debugGrid);
+			mapData = GameObject.FindGameObjectWithTag("Data").GetComponent<ScenarioData>();
+			mapData.map = Instantiate<GameObject>(mapData.map);
+			isMulti = mapData.isMulti;
+			team = mapData.myTeam;
+			grid = mapData.map.GetComponent<Grid>();
 
-		for (int i = 0; i < Math.Min(mapData.levelData.spawnpointTeam1.Count, mapData.ActorRole1.Count); i++) {
-			if (!isMulti || team == 1) {
-				actors.Add(new Player(mapData.ActorRole1[i], mapData.levelData.spawnpointTeam1[i], 1));
+			for (int i = 0; i < Math.Min(mapData.levelData.spawnpointTeam1.Count, mapData.ActorRole1.Count); i++) {
+				if (!isMulti || team == 1) {
+					actors.Add(new Player(mapData.ActorRole1[i], mapData.levelData.spawnpointTeam1[i], 1));
+				}
+				else {
+					actors.Add(new MPlayer(mapData.ActorRole1[i], mapData.levelData.spawnpointTeam1[i], 1));
+				}
 			}
-			else {
-				actors.Add(new MPlayer(mapData.ActorRole1[i], mapData.levelData.spawnpointTeam1[i], 1));
+			for (int i = 0; i < Math.Min(mapData.levelData.spawnpointTeam2.Count, mapData.ActorRole2.Count); i++) {
+				if (!isMulti) {
+					actors.Add(new AIPlayer(mapData.ActorRole2[i], mapData.levelData.spawnpointTeam2[i], 2));
+				}
+				else if (isMulti && team == 2) {
+					actors.Add(new Player(mapData.ActorRole2[i], mapData.levelData.spawnpointTeam2[i], 2));
+				}
+				else {
+					actors.Add(new MPlayer(mapData.ActorRole2[i], mapData.levelData.spawnpointTeam2[i], 2));
+				}
 			}
 		}
-		for (int i = 0; i < Math.Min(mapData.levelData.spawnpointTeam2.Count, mapData.ActorRole2.Count); i++) {
-			if (!isMulti) {
-				actors.Add(new AIPlayer(mapData.ActorRole2[i], mapData.levelData.spawnpointTeam2[i], 2));
-			}
-			else if (isMulti && team == 2) {
-				actors.Add(new Player(mapData.ActorRole2[i], mapData.levelData.spawnpointTeam2[i], 2));
-			}
-			else {
-				actors.Add(new MPlayer(mapData.ActorRole2[i], mapData.levelData.spawnpointTeam2[i], 2));
-			}
+		else {
+			debugGrid.SetActive(true);
+			grid = debugGrid.GetComponent<Grid>();
+			actors.Add(new Player("Ninja", new Vector3Int(0, 0, 0), 1));
+			actors[0].MoveRadius = 35;
+			actors[0].moveAnimationSpeed = 4f;
+			team = 1;
 		}
+		GetWorldTiles();
 
 		for (int i = 0; i < actors.Count; i++) {
 			actors[i].Idx = i;
@@ -111,8 +126,8 @@ public class Main : MonoBehaviour {
 	void Update() {
 		ClickDebug();
 		if (playing) {
-			if (team == 1 && turnQueue.Count > 0) {
-				if (!turnQueue.active) {
+			if (team == 1) {
+				if (!turnQueue.active && turnQueue.Count > 0) {
 					thisTurn = turnQueue.Pop();
 					thisTurn.Item1.Run();
 					Debug.Log("this turn: Team " + (thisTurn.Item1.TeamID) + " " + thisTurn.Item1.Position);
@@ -121,7 +136,7 @@ public class Main : MonoBehaviour {
 					}
 					turnQueue.active = true;
 				}
-				else if (thisTurn.Item1.State == Actor.TurnState.INACTIVE) {
+				else if (thisTurn != null && thisTurn.Item1.State == Actor.TurnState.INACTIVE) {
 					if (thisTurn.Item1.Health > 0)
 						turnQueue.Add(thisTurn.Item1, thisTurn.Item2);
 					turnQueue.active = false;
@@ -138,25 +153,27 @@ public class Main : MonoBehaviour {
 			}
 		}
 
-		int Group1 = 0;
-		int Group2 = 0;
-		foreach (var iActor in actors) {
-			if (iActor.Health > 0) {
-				if (iActor.TeamID == 1) {
-					Group1++;
-				}
-				else {
-					Group2++;
+		if (!isDebug) {
+			int Group1 = 0;
+			int Group2 = 0;
+			foreach (var iActor in actors) {
+				if (iActor.Health > 0) {
+					if (iActor.TeamID == 1) {
+						Group1++;
+					}
+					else {
+						Group2++;
+					}
 				}
 			}
-		}
-		if (Group1 == 0 || Group2 == 0) {
-			playing = false;
-			winPanel.SetActive(true);
-			if (isMulti)
-				winPanel.GetComponentInChildren<Text>().text = (Group2 == 0 ? teamName[0] : teamName[1]) + " Win";
-			else
-				winPanel.GetComponentInChildren<Text>().text = (Group2 == 0 ? "Blue" : "Red") + " Win";
+			if (Group1 == 0 || Group2 == 0) {
+				playing = false;
+				winPanel.SetActive(true);
+				if (isMulti)
+					winPanel.GetComponentInChildren<Text>().text = (Group2 == 0 ? teamName[0] : teamName[1]) + " Win";
+				else
+					winPanel.GetComponentInChildren<Text>().text = (Group2 == 0 ? "Blue" : "Red") + " Win";
+			}
 		}
 
 		ActorUpdate?.Invoke();
@@ -192,6 +209,28 @@ public class Main : MonoBehaviour {
 			Vector3Int temp2 = grid.WorldToCell(temp1);
 			Debug.Log(temp2);
 
+			RectTransform menupopup = MenuPanel.GetComponent<RectTransform>();
+			Rect menuPopRect = new Rect(menupopup.rect);
+			menuPopRect.position += menupopup.anchoredPosition;
+			Debug.Log(menuPopRect);
+			Canvas canvas = UICanvas.GetComponent<Canvas>();
+			if (!menuPopRect.Contains(canvas.ScreenToCanvasPosition(Input.mousePosition))) {
+				Debug.Log(canvas.ScreenToCanvasPosition(Input.mousePosition));
+				MenuPanel.SetActive(false);
+				menuFocus = false;
+			}
+			clicked = true;
+		}
+		else if (Input.GetMouseButtonDown(1) && !clicked) {
+			MenuPanel.transform.position = Input.mousePosition;
+			if (worldpos.y > 0) {
+				MenuPanel.transform.localPosition -= new Vector3(0,MenuPanel.GetComponent<RectTransform>().rect.height);
+			}
+			if (worldpos.x > 0) {
+				MenuPanel.transform.localPosition -= new Vector3(MenuPanel.GetComponent<RectTransform>().rect.width, 0);
+			}
+			MenuPanel.SetActive(true);
+			menuFocus = true;
 			clicked = true;
 		}
 		else
@@ -229,10 +268,17 @@ public class Main : MonoBehaviour {
 	public void LoadMenu() {
 		Client.Instance?.Suicide();
 		Server.Instance?.Suicide();
-		mapData.Suicide();
+		mapData?.Suicide();
 		Client.Instance = null;
 		Server.Instance = null;
 		SceneManager.LoadScene(0);
+	}
+
+	public void AbortToMenu() {
+		if (isMulti)
+			Client.Instance.Send("CAB");
+		else
+			LoadMenu();
 	}
 
 	public void MultiMove(int idx, Vector3Int tar) {

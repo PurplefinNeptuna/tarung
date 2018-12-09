@@ -9,6 +9,7 @@ using UnityEngine.Tilemaps;
 [Serializable]
 public class Player : Actor {
 	public List<Tuple<Vector3Int, List<Utility.Direction>>> playerMove;
+	public bool movableShowed = false;
 
 	public Player(string actorType, Vector3Int startpos, int team) {
 		TeamID = team;
@@ -36,12 +37,13 @@ public class Player : Actor {
 		else {
 			if (Main.main.isMulti)
 				Client.Instance.Send("CRC|" + Idx);
+			instant = true;
 			Position = new Vector3Int(-1000, -1000, 0);
 		}
 	}
 
 	public override void Update() {
-		if (Input.GetMouseButtonDown(0)) {
+		if (Input.GetMouseButtonDown(0) && !Main.main.menuFocus) {
 			Vector3 worldpos = Camera.main.ScreenToWorldPoint(Input.mousePosition);
 			Vector3Int cellpos = Main.main.grid.WorldToCell(worldpos);
 
@@ -53,6 +55,13 @@ public class Player : Actor {
 					mData += cellpos.x + "#" + cellpos.y;
 					if (Main.main.isMulti)
 						Client.Instance.Send(mData);
+
+					ActorMoveList = playerMove.SingleOrDefault(x => x.Item1 == cellpos).Item2;
+					if (ActorMoveList == null) {
+						ActorMoveList = new List<Utility.Direction>();
+					}
+					Debug.Log(ActorMoveList.Count);
+
 					Position = cellpos;
 					State = TurnState.WAIT;
 				}
@@ -68,6 +77,7 @@ public class Player : Actor {
 				if (Main.main.ground.GetColor(cellpos) == Main.main.attackColor) {
 					Actor target = Main.main.actors.FirstOrDefault(x => x.Position == cellpos && x.Health > 0);
 					target.Health -= Attack;
+					ActorAnim.FaceAttackTarget(cellpos);
 					ResetMovablePosition();
 					string mData = "CSA|";
 					mData += Idx + "|";
@@ -96,6 +106,16 @@ public class Player : Actor {
 			else
 				State = TurnState.ATK;
 		}
+		if (!movableShowed && !inAnimation) {
+			if (State == TurnState.ATK) {
+				ShowMovablePosition(true);
+				movableShowed = true;
+			}
+			else if (State == TurnState.MOVE) {
+				ShowMovablePosition();
+				movableShowed = true;
+			}
+		}
 	}
 
 	public void EndTurn() {
@@ -105,10 +125,14 @@ public class Player : Actor {
 
 	void GetMovablePosition(int radius, bool searchActor = false) {
 		playerMove = Utility.SelectableArea(Position, Main.main.tiles, radius, TeamID, searchActor);
+		movableShowed = false;
+	}
+
+	void ShowMovablePosition(bool searchActor = false) {
 		foreach (var moveList in playerMove) {
 			Main.main.ground.SetColor(moveList.Item1, searchActor ? Main.main.attackColor : Main.main.moveColor);
 		}
-		if (playerMove != null && playerMove.Count > 0) 
+		if (playerMove != null && playerMove.Count > 0)
 			Main.main.ground.SetColor(Position, Main.main.activeColor);
 	}
 

@@ -22,6 +22,8 @@ CHR = client (host) set run
 SHR = broadcast of CHR
 CRC = client (host) removing corpse
 SRC = broadcast of CRC
+CAB = Client abort game
+SAB = broadcast CAB
 */
 public class Server : MonoBehaviour {
 
@@ -181,6 +183,9 @@ public class Server : MonoBehaviour {
 				uData = "SRC|";
 				uData += cData[1];
 				Broadcast(uData, clients);
+				break;
+			case "CAB":
+				Broadcast("SAB", clients);
 				break;
 		}
 	}

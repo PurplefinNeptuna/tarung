@@ -12,6 +12,7 @@ public class AIPlayer : Actor {
 	public bool thinking = false;
 	public float thinkMaxTime = 2f;
 	public float thinkTime = 2f;
+	public bool movableShowed = false;
 
 	public AIPlayer(string actorType, Vector3Int startpos, int team) {
 		TeamID = team;
@@ -41,6 +42,7 @@ public class AIPlayer : Actor {
 			Main.main.ActorUpdate += Update;
 		}
 		else {
+			instant = true;
 			Position = new Vector3Int(-1000, -1000, 0);
 		}
 	}
@@ -53,6 +55,13 @@ public class AIPlayer : Actor {
 				if (Position == nearest) {
 					nearest = Utility.NearestEnemy(Position, Main.main.tiles, MoveRadius, TeamID, true);
 				}
+
+				ActorMoveList = playerMove.SingleOrDefault(x => x.Item1 == nearest).Item2;
+				if (ActorMoveList == null) {
+					ActorMoveList = new List<Utility.Direction>();
+				}
+				Debug.Log(ActorMoveList.Count);
+
 				Position = nearest;
 				State = TurnState.WAIT;
 			}
@@ -68,7 +77,9 @@ public class AIPlayer : Actor {
 			}
 			else if (State == TurnState.ATK) {
 				ResetMovablePosition();
-				Actor target = Main.main.actors.FirstOrDefault(x => x.Position == playerMove[0].Item1 && x.Health > 0);
+				Vector3Int targetPos = playerMove[0].Item1;
+				Actor target = Main.main.actors.FirstOrDefault(x => x.Position == targetPos && x.Health > 0);
+				ActorAnim.FaceAttackTarget(targetPos);
 				target.Health -= Attack;
 				EndTurn();
 			}
@@ -78,6 +89,16 @@ public class AIPlayer : Actor {
 			if (thinkTime <= 0f) {
 				thinking = false;
 				thinkTime = thinkMaxTime;
+			}
+		}
+		if (!movableShowed && !inAnimation) {
+			if (State == TurnState.ATK) {
+				ShowMovablePosition(true);
+				movableShowed = true;
+			}
+			else if (State == TurnState.MOVE) {
+				ShowMovablePosition();
+				movableShowed = true;
 			}
 		}
 	}
@@ -92,6 +113,10 @@ public class AIPlayer : Actor {
 
 	void GetMovablePosition(int radius, bool searchActor = false) {
 		playerMove = Utility.SelectableArea(Position, Main.main.tiles, radius, TeamID, searchActor);
+		movableShowed = false;
+	}
+
+	void ShowMovablePosition(bool searchActor = false) {
 		foreach (var moveList in playerMove) {
 			Main.main.ground.SetColor(moveList.Item1, searchActor ? Main.main.attackColor : Main.main.moveColor);
 		}

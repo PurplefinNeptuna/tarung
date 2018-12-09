@@ -11,6 +11,10 @@ public abstract class Actor {
 	private Vector3Int _position;
 	private int _health;
 	private ActorData _actorData;
+	public bool instant = true;
+	public bool inAnimation = false;
+
+	public float moveAnimationSpeed = .75f;
 
 	public enum TurnState {
 		INACTIVE,
@@ -24,6 +28,14 @@ public abstract class Actor {
 	public GameObject ActorObject {
 		get; set;
 	}
+	public ActorMove ActorAnim {
+		get; set;
+	}
+
+	public List<Utility.Direction> ActorMoveList {
+		get; set;
+	}
+
 	public ActorData ActorDataOrigin {
 		get {
 			return _actorData;
@@ -31,9 +43,14 @@ public abstract class Actor {
 		set {
 			_actorData = value;
 			if (_actorData != null) {
-				ActorObject = new GameObject("Actor",typeof(SpriteRenderer));
+				ActorMoveList = new List<Utility.Direction>();
+				ActorObject = new GameObject("Actor", typeof(SpriteRenderer), typeof(ActorMove));
+				ActorAnim = ActorObject.GetComponent<ActorMove>();
+				ActorAnim.actor = this;				
 				SpriteRenderer temp = ActorObject.GetComponent<SpriteRenderer>();
-				temp.sprite = _actorData.sprite;
+				ActorAnim.sprite = temp;
+				ActorAnim.renderedSprite = _actorData.lrSprite;
+				temp.sprite = _actorData.lrSprite[ActorAnim.FeetPos];
 				temp.sortingLayerName = "fg";
 				if (TeamID == 2) {
 					temp.flipX = true;
@@ -86,9 +103,15 @@ public abstract class Actor {
 			return _position;
 		}
 		set {
+			var oldPos = _position;
 			_position = value;
 			if (ActorObject != null) {
-				ActorObject.transform.position = Main.main.grid.CellToWorld(Position) + new Vector3((float)Size / 2, (float)Size / 2);
+				if (instant) {
+					ActorObject.transform.position = Main.main.grid.CellToWorld(Position) + new Vector3((float)Size / 2, (float)Size / 2);
+					instant = false;
+				}
+				else
+					ActorAnim?.AnimateMove(ActorMoveList, oldPos, new Vector3((float)Size / 2, (float)Size / 2), moveAnimationSpeed);
 			}
 		}
 	}
@@ -97,6 +120,7 @@ public abstract class Actor {
 	public abstract void Update();
 
 	public void HideCorpse() {
+		instant = true;
 		Position = new Vector3Int(-1000, -1000, 0);
 	}
 }
